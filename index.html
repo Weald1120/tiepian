@@ -565,8 +565,8 @@ function drawStickerText(ctx, text, fs, cx, baseline, t){
 }
 
 /* ---------- 像素对话框 ---------- */
-/* 路径 = 白色区域边界，描边向外扩 bd；尾巴为左下像素阶梯 */
-function bubbleSilhouette(x0, y0, x1, y1, s){
+/* 路径 = 白色区域边界，描边向外扩 bd；左右闭合，尾巴为左下像素阶梯 */
+function bubblePath(x0, y0, x1, y1, s, tail){
   const p = new Path2D();
   p.moveTo(x0 + s, y0);
   p.lineTo(x1 - s, y0);
@@ -575,6 +575,21 @@ function bubbleSilhouette(x0, y0, x1, y1, s){
   p.lineTo(x1, y1 - s);
   p.lineTo(x1 - s, y1 - s);
   p.lineTo(x1 - s, y1);
+
+  // 底边右段 → 尾巴右壁
+  const tx = tail.x, tw = tail.w;
+  p.lineTo(tx + tw, y1);
+  // 尾巴白域（自右上角出发，顺时针）：右壁下 → 阶梯内收 → 平底 → 左壁上行
+  const T = [
+    [164, 0], [164, 160], [119, 160], [119, 200],
+    [76, 200], [76, 250], [0, 250], [0, 160],
+    [45, 160], [45, 0]
+  ];
+  for (let i = 1; i < T.length; i++){
+    p.lineTo(tx + T[i][0] * (tw / 164), y1 + T[i][1]);
+  }
+
+  // 底边左段 → 左下角
   p.lineTo(x0 + s, y1);
   p.lineTo(x0 + s, y1 - s);
   p.lineTo(x0, y1 - s);
@@ -584,27 +599,15 @@ function bubbleSilhouette(x0, y0, x1, y1, s){
   return p;
 }
 
-/* 尾巴路径（接在气泡底边上） */
-function tailSilhouette(y1){
-  const T = [
-    [674, 1830], [674, 1990], [629, 1990], [629, 2130],
-    [679, 2130], [679, 2030], [705, 2030], [705, 2010],
-    [748, 2010], [748, 1990], [793, 1990], [793, 1830]
-  ];
-  const p = new Path2D();
-  p.moveTo(T[0][0], T[0][1]);
-  for (let i = 1; i < T.length; i++) p.lineTo(T[i][0], T[i][1]);
-  p.closePath();
-  return p;
-}
-
-function drawBubble(ctx, fill){
+function drawBubble(ctx, fill, w, tailX){
   const s = 34, bd = 37;
-  const y0 = 1281, y1 = 1830;      // 白域上下边界
-  const x0 = -70, x1 = W + 70;
+  const left = CX - w / 2, right = CX + w / 2;
+  const x0 = left + bd, x1 = right - bd;
+  const y0 = 1244 + bd, y1 = 1875 - bd;   // 白域上下边界（外沿 1244 / 1875）
 
-  const body = bubbleSilhouette(x0, y0, x1, y1, s);
-  const tail = tailSilhouette(y1);
+  const tailW = 164, tailD = 250;
+  const tx = clamp(tailX, x0 + s + 20, x1 - s - tailW - 20);
+  const path = bubblePath(x0, y0, x1, y1, s, { x: tx, w: tailW });
 
   ctx.save();
   ctx.lineJoin = 'miter';
@@ -619,15 +622,14 @@ function drawBubble(ctx, fill){
   ctx.shadowOffsetY = 40;
   ctx.fillStyle = '#000';
   ctx.strokeStyle = '#000';
-  ctx.fill(body); ctx.stroke(body);
-  ctx.fill(tail); ctx.stroke(tail);
+  ctx.fill(path); ctx.stroke(path);
   ctx.restore();
 
   // 黑边 + 内里
   ctx.strokeStyle = '#000';
-  ctx.stroke(body); ctx.stroke(tail);
+  ctx.stroke(path);
   ctx.fillStyle = fill || '#FFFFFF';
-  ctx.fill(body); ctx.fill(tail);
+  ctx.fill(path);
   ctx.restore();
 }
 
@@ -662,7 +664,7 @@ function buildSticker(key, rawValue, opt){
 
   // 2) 超宽则缩字号
   const avail = t.fullBleed ? W - 250
-    : (t.mode === 'bubble' ? W - 360
+    : (t.mode === 'bubble' ? 1800 - 392
     : (t.mode === 'text' ? W - 210
     : Math.min(t.bandMax || 1880, W - 40) - (t.pad || 0) * 2 - 26));
   if (tw() > avail){
@@ -674,11 +676,16 @@ function buildSticker(key, rawValue, opt){
   let bd;
 
   if (t.mode === 'bubble'){
-    drawBubble(ctx, t.fill || '#FFFFFF');
+    const bw = clamp(textW + 2 * 196, 820, 1800);
+    const tailX = CX - textW / 2 + textW * 0.18;
+    drawBubble(ctx, t.fill || '#FFFFFF', bw, tailX);
     const m = ink(text, fs);
     const baseline = CY + t.textCY + (m.asc - m.desc) / 2;
     drawStickerText(ctx, text, fs, CX, baseline, t);
-    bd = { x0: 0, y0: CY - 463 - 24, x1: W, y1: CY - 463 + 556 + 360 };
+    bd = {
+      x0: CX - bw / 2 - 20, y0: 1244 - 24,
+      x1: CX + bw / 2 + 60, y1: 1875 + 330
+    };
   } else if (t.mode === 'text'){
     const m = ink(text, fs);
     const baseline = CY + t.textCY + (m.asc - m.desc) / 2;
