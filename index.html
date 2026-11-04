@@ -259,6 +259,7 @@ h1{font-size:22px;line-height:1.3;margin:0 0 7px;letter-spacing:.2px;font-weight
   margin:14px 0 0;padding-top:12px;border-top:1px solid rgba(255,255,255,.75);
   font-size:11.5px;line-height:1.75;color:var(--ink-3);
 }
+.ver{display:inline-block;margin-left:7px;font-size:10px;color:#BFB0A0;opacity:.9}
 .foot{text-align:center;font-size:11.5px;color:#A6977F;line-height:1.9;margin-top:8px;padding:0 10px}
 .foot a{color:#B4801A;text-decoration:none;font-weight:700}
 
@@ -355,7 +356,7 @@ h1{font-size:22px;line-height:1.3;margin:0 0 7px;letter-spacing:.2px;font-weight
     <p class="note">生成文件为 1920×3414 透明 PNG，与原始贴片分辨率一致；导入后默认铺满画面，贴片位于画面正中，按需缩放即可。</p>
   </section>
 
-  <p class="foot">透明通道完整，不遮挡直播画面</p>
+  <p class="foot">透明通道完整，不遮挡直播画面<span class="ver" id="ver">v2</span></p>
 </div>
 
 <script>
@@ -600,7 +601,7 @@ function bubblePath(x0, y0, x1, y1, s, tail){
 }
 
 function drawBubble(ctx, fill, w, tailX){
-  const s = 34, bd = 37;
+  const s = 56, bd = 37;
   const left = CX - w / 2, right = CX + w / 2;
   const x0 = left + bd, x1 = right - bd;
   const y0 = 1244 + bd, y1 = 1875 - bd;   // 白域上下边界（外沿 1244 / 1875）
