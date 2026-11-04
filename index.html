@@ -1002,6 +1002,21 @@ ui.val.addEventListener('keydown', e => {
 
 window.StickerApp = { buildSticker, TPL, state };
 
+/* 版本自更新：页面被缓存时自动切到最新构建 */
+(async function autoUpdate(){
+  try{
+    const r = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
+    const v = await r.json();
+    if (!v || !v.build) return;
+    const seen = localStorage.getItem('tiepian.build');
+    localStorage.setItem('tiepian.build', v.build);
+    if (seen && seen !== v.build){
+      const url = location.pathname + '?b=' + v.build;
+      if (!location.search.includes('b=' + v.build)) location.replace(url);
+    }
+  }catch(e){}
+})();
+
 /* 调试：?metrics=1 输出字体度量 */
 (function metrics(){
   const q = new URLSearchParams(location.search);
