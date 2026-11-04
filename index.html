@@ -1,0 +1,1032 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F7F2EA">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no">
+<meta name="description" content="迷人秀直播间贴片生成器：输入手机号或微信号，一键生成 1920×3414 透明 PNG 贴片，5 种样式，文字颜色与底色可自定义。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="迷人秀 · 直播间贴片生成器">
+<meta property="og:description" content="输入号码，生成透明底直播间贴片，长按即可保存到相册。">
+<title>直播间贴片生成器</title>
+<link rel="icon" href="assets/icon-180.png" sizes="180x180">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<link rel="stylesheet" href="assets/font.css">
+<style>
+/* ============ 基础 ============ */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+:root{
+  --ink:#2B2116;
+  --ink-2:#786853;
+  --ink-3:#A08F79;
+  --accent:#F0A800;
+  --glow:#FFD042;
+  --line:rgba(255,255,255,.62);
+  --r-lg:30px;
+  --r-md:20px;
+}
+body{
+  min-height:100svh;
+  font-family:system-ui,-apple-system,"PingFang SC","HarmonyOS Sans SC","MiSans","Microsoft YaHei",sans-serif;
+  color:var(--ink);
+  background:
+    radial-gradient(70% 45% at 8% 2%, rgba(255,226,158,.95) 0%, rgba(255,226,158,0) 60%),
+    radial-gradient(55% 40% at 98% 8%, rgba(255,204,182,.8) 0%, rgba(255,204,182,0) 62%),
+    radial-gradient(60% 45% at 50% 104%, rgba(255,232,178,.9) 0%, rgba(255,232,178,0) 66%),
+    radial-gradient(45% 30% at 88% 62%, rgba(255,240,200,.8) 0%, rgba(255,240,200,0) 70%),
+    linear-gradient(168deg,#FFFCF4 0%,#FBF4E6 44%,#F6EEDD 100%);
+  background-attachment:fixed;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+/* ============ 背景流体光斑 ============ */
+.scene{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.blob{position:absolute;border-radius:46% 54% 58% 42%/48% 42% 58% 52%;filter:blur(52px);opacity:.58;mix-blend-mode:multiply;will-change:transform}
+.b1{width:62vmax;height:62vmax;left:-24vmax;top:-22vmax;background:radial-gradient(circle at 42% 42%,#FFD88C,rgba(255,216,140,0) 68%);animation:drift1 26s ease-in-out infinite alternate}
+.b2{width:52vmax;height:52vmax;right:-22vmax;top:-10vmax;background:radial-gradient(circle at 50% 50%,#FFC8AF,rgba(255,200,175,0) 68%);animation:drift2 30s ease-in-out infinite alternate}
+.b3{width:58vmax;height:58vmax;left:10vmax;bottom:-30vmax;background:radial-gradient(circle at 50% 50%,#FFE3A6,rgba(255,227,166,0) 68%);animation:drift3 34s ease-in-out infinite alternate}
+.b4{width:34vmax;height:34vmax;right:-8vmax;bottom:12vmax;background:radial-gradient(circle at 50% 50%,#D8EFD4,rgba(216,239,212,0) 70%);animation:drift2 24s ease-in-out infinite alternate-reverse}
+@keyframes drift1{to{transform:translate3d(7%,6%,0) scale(1.14) rotate(8deg)}}
+@keyframes drift2{to{transform:translate3d(-8%,7%,0) scale(1.08) rotate(-6deg)}}
+@keyframes drift3{to{transform:translate3d(5%,-7%,0) scale(1.12)}}
+.grain{
+  position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.18;mix-blend-mode:soft-light;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/></filter><rect width='160' height='160' filter='url(%23n)' opacity='.6'/></svg>");
+  background-size:160px 160px;
+}
+/* ============ 布局 ============ */
+.wrap{position:relative;z-index:2;max-width:540px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 30px) 16px calc(env(safe-area-inset-bottom) + 36px)}
+.hero{display:flex;align-items:center;gap:14px;text-align:left;margin-bottom:20px;padding:0 4px}
+.brand-logo{height:112px;width:auto;flex:0 0 auto;filter:drop-shadow(0 8px 16px rgba(62,109,100,.16))}
+.brand-text{min-width:0;flex:1 1 auto}
+h1{font-size:22px;line-height:1.3;margin:0 0 7px;letter-spacing:.2px;font-weight:800}
+.sub{margin:0;font-size:12px;color:var(--ink-2);line-height:1.7;letter-spacing:.1px}
+.sub em{font-style:normal;color:#B4801A;font-weight:800}
+
+/* ============ 液态玻璃卡片 ============ */
+.card{
+  position:relative;border-radius:var(--r-lg);padding:16px;margin-bottom:16px;isolation:isolate;
+  background:
+    linear-gradient(158deg, rgba(255,255,255,.58) 0%, rgba(255,255,255,.26) 38%, rgba(255,255,255,.16) 64%, rgba(255,255,255,.38) 100%);
+  -webkit-backdrop-filter:blur(26px) saturate(180%);
+  backdrop-filter:blur(26px) saturate(180%);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.94) inset,
+    0 -18px 30px -24px rgba(120,86,30,.45) inset,
+    0 34px 64px -40px rgba(96,66,20,.42),
+    0 6px 18px rgba(96,66,20,.07),
+    0 0 0 .5px rgba(255,255,255,.35);
+  overflow:hidden;
+}
+.card::before{
+  content:"";position:absolute;inset:0;border-radius:inherit;padding:1.2px;pointer-events:none;z-index:4;
+  background:linear-gradient(150deg,
+    rgba(255,255,255,1) 0%, rgba(255,255,255,.25) 18%,
+    rgba(255,255,255,.06) 42%, rgba(255,255,255,.10) 58%,
+    rgba(255,255,255,.75) 82%, rgba(255,255,255,1) 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite:exclude;
+}
+.card::after{
+  content:"";position:absolute;left:0;right:0;top:0;height:52%;pointer-events:none;z-index:0;
+  background:linear-gradient(180deg, rgba(255,255,255,.46) 0%, rgba(255,255,255,0) 100%);
+  border-radius:inherit;
+}
+.card>*{position:relative;z-index:1}
+
+/* ============ 模板胶囊 ============ */
+.chips-wrap{position:relative;margin:0 -16px 4px;padding:0 16px}
+.chips-wrap::after{
+  content:"";position:absolute;top:0;right:0;bottom:10px;width:34px;pointer-events:none;
+  background:linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.55));
+  border-radius:0 16px 16px 0;
+}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.chips::-webkit-scrollbar{display:none}
+.chip{
+  flex:0 0 auto;border:1px solid rgba(255,255,255,.75);border-radius:999px;
+  padding:9px 15px;font-size:13px;font-weight:700;color:#5B4C38;cursor:pointer;font-family:inherit;
+  background:linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,.3));
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 10px 18px -14px rgba(84,60,22,.55);
+  transition:transform .16s ease, box-shadow .24s ease, color .2s ease, background .24s ease;
+  white-space:nowrap;
+}
+.chip:active{transform:scale(.96)}
+.chip[aria-selected="true"]{
+  color:#3A2A00;border-color:rgba(255,255,255,.95);
+  background:linear-gradient(180deg,#FFE48B 0%,#FFC42A 100%);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.95) inset,
+    0 -4px 10px -6px rgba(170,100,0,.5) inset,
+    0 14px 24px -14px rgba(226,150,0,.9);
+}
+
+/* ============ 输入 ============ */
+.field{
+  display:flex;align-items:center;gap:10px;padding:5px 6px 5px 15px;border-radius:var(--r-md);
+  background:linear-gradient(180deg, rgba(255,255,255,.72), rgba(255,255,255,.42));
+  border:1px solid rgba(255,255,255,.85);
+  box-shadow:0 2px 7px rgba(120,90,30,.09) inset, 0 1px 0 rgba(255,255,255,.9);
+  transition:box-shadow .22s ease, border-color .22s ease;
+}
+.field:focus-within{border-color:rgba(255,190,60,.95);box-shadow:0 2px 7px rgba(120,90,30,.07) inset, 0 0 0 3.5px rgba(255,192,46,.22)}
+.field .pfx{
+  font-family:"StickerBlack",system-ui,sans-serif;font-weight:900;font-size:17px;color:#BE8615;
+  padding-right:2px;transform:skewX(-8deg);flex:0 0 auto;
+}
+.field input{
+  flex:1 1 auto;min-width:0;border:0;outline:0;background:transparent;
+  font-size:19px;font-weight:800;letter-spacing:.8px;color:var(--ink);padding:11px 0;font-family:inherit;
+}
+.field input::placeholder{color:#B9AA94;font-weight:600;letter-spacing:0}
+.mini{
+  flex:0 0 auto;border:0;border-radius:14px;padding:10px 13px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;
+  color:#6B5B44;background:rgba(255,255,255,.62);box-shadow:0 1px 0 rgba(255,255,255,.95) inset;
+}
+.mini:active{transform:scale(.96)}
+
+.row{display:flex;align-items:flex-start;gap:10px;margin-top:13px}
+.row .lab{font-size:12.5px;font-weight:700;color:var(--ink-2);flex:0 0 auto;padding-top:6px;width:44px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{
+  border:1px solid rgba(255,255,255,.85);border-radius:12px;padding:6px 13px;font-size:12.5px;font-weight:700;font-family:inherit;
+  color:#5B4C38;background:rgba(255,255,255,.48);cursor:pointer;box-shadow:0 1px 0 rgba(255,255,255,.9) inset;
+  transition:all .18s ease;
+}
+.seg button.on{background:linear-gradient(180deg,#FFE48B,#FFC42A);color:#3A2A00;border-color:rgba(255,255,255,.95)}
+
+/* 颜色选择 */
+.colors{display:flex;gap:11px;overflow-x:auto;padding:4px 2px 3px;scrollbar-width:none;-webkit-overflow-scrolling:touch;flex:1 1 auto;min-width:0}
+.colors::-webkit-scrollbar{display:none}
+.sw{
+  flex:0 0 auto;width:29px;height:29px;border-radius:50%;padding:0;cursor:pointer;position:relative;
+  border:2px solid rgba(255,255,255,.95);
+  box-shadow:0 2px 7px rgba(84,60,22,.26), 0 1px 0 rgba(255,255,255,.9) inset;
+  transition:transform .16s ease;
+}
+.sw:active{transform:scale(.92)}
+.sw[data-c="#FFFFFF"]{box-shadow:inset 0 0 0 1px rgba(84,60,22,.18), 0 2px 7px rgba(84,60,22,.24)}
+.sw[aria-pressed="true"]{box-shadow:0 0 0 2.5px #E39A00, 0 3px 9px rgba(84,60,22,.28)}
+.sw[aria-pressed="true"]::after{content:"";position:absolute;inset:-7px;border-radius:50%;border:1px solid rgba(227,154,0,.45)}
+.sw[data-c="#FFFFFF"][aria-pressed="true"]{box-shadow:inset 0 0 0 1px rgba(84,60,22,.18), 0 0 0 2.5px #E39A00}
+
+/* ============ 按钮 ============ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  border:0;border-radius:19px;padding:16px 18px;font-size:16px;font-weight:800;letter-spacing:.6px;
+  cursor:pointer;font-family:inherit;transition:transform .14s ease, box-shadow .22s ease, opacity .2s;
+}
+.btn:active{transform:scale(.975)}
+.btn.primary{
+  color:#3B2A00;
+  background:linear-gradient(180deg,#FFE79B 0%,#FFC72E 52%,#F6AE10 100%);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.95) inset,
+    0 -5px 12px -7px rgba(150,90,0,.6) inset,
+    0 16px 28px -16px rgba(226,150,0,1);
+}
+.btn.glass{
+  color:#4B3D2B;
+  background:linear-gradient(180deg, rgba(255,255,255,.74), rgba(255,255,255,.44));
+  border:1px solid rgba(255,255,255,.9);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  box-shadow:0 1px 0 rgba(255,255,255,.95) inset, 0 14px 24px -18px rgba(84,60,22,.75);
+}
+.btn[disabled]{opacity:.55;pointer-events:none}
+.gen-wrap{margin-top:15px}
+
+/* ============ 预览 ============ */
+.preview-card{padding:14px 14px 18px}
+.preview-head{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:var(--ink-2);padding:2px 4px 11px}
+.dot{width:7px;height:7px;border-radius:50%;background:#2FB873;box-shadow:0 0 0 3px rgba(47,184,115,.16)}
+.preview-head .meta{margin-left:auto;font-weight:600;color:var(--ink-3);font-size:11.5px;letter-spacing:.2px}
+.stage{
+  position:relative;border-radius:var(--r-md);padding:10px;display:grid;place-items:center;min-height:180px;
+  border:1px solid rgba(255,255,255,.92);
+  box-shadow:0 2px 12px rgba(84,60,22,.09) inset;
+  background-color:#FBF8F1;
+  background-image:
+    linear-gradient(45deg,#EDE7DB 25%,transparent 25%,transparent 75%,#EDE7DB 75%),
+    linear-gradient(45deg,#EDE7DB 25%,transparent 25%,transparent 75%,#EDE7DB 75%);
+  background-size:22px 22px;background-position:0 0,11px 11px;
+  overflow:hidden;
+}
+.stage{height:238px}
+.stage img{display:block;width:100%;height:auto;border-radius:6px;-webkit-user-drag:none;user-select:none;transition:opacity .2s}
+.stage.zoom{display:block}
+.stage.zoom img{position:absolute;top:50%;left:50%;width:calc(100% - 20px);transform:translate(-50%,-50%);border-radius:4px}
+.stage.fit{height:auto;min-height:180px;padding:10px}
+.stage.fit img{width:auto;max-width:100%;max-height:52vh;margin:0 auto;position:static;transform:none}
+.stage .zoomhint{
+  position:absolute;right:10px;bottom:10px;z-index:2;font-size:11px;font-weight:700;color:#5B4C38;
+  background:rgba(255,255,255,.86);border-radius:999px;padding:5px 10px;backdrop-filter:blur(6px);
+  box-shadow:0 4px 10px -6px rgba(84,60,22,.5), 0 1px 0 rgba(255,255,255,.9) inset;pointer-events:none;
+}
+.tip{margin:11px 2px 13px;font-size:12px;color:var(--ink-2);text-align:center;line-height:1.7}
+.tip b{color:#B4801A}
+.actions{display:grid;grid-template-columns:1.4fr 1fr;gap:10px}
+.switch{display:flex;align-items:center;gap:9px;margin:15px 2px 0;font-size:12.5px;color:var(--ink-2);font-weight:600;cursor:pointer;user-select:none}
+.switch input{appearance:none;-webkit-appearance:none;width:40px;height:24px;border-radius:99px;background:rgba(180,160,130,.34);position:relative;transition:background .22s;margin:0;flex:0 0 auto;box-shadow:0 1px 2px rgba(84,60,22,.15) inset}
+.switch input::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(84,60,22,.3);transition:transform .22s cubic-bezier(.34,1.4,.64,1)}
+.switch input:checked{background:linear-gradient(180deg,#FFD145,#FFB300)}
+.switch input:checked::after{transform:translateX(16px)}
+.switch span{line-height:1.4}
+
+/* ============ 说明 ============ */
+.guide{padding:18px 18px 16px}
+.guide h3{margin:0 0 14px;font-size:14px;font-weight:800;letter-spacing:.3px;display:flex;align-items:center;gap:8px}
+.guide h3::before{content:"";width:4px;height:14px;border-radius:3px;background:linear-gradient(180deg,#FFD145,#F5A800)}
+.steps{display:grid;gap:12px;margin:0;padding:0;list-style:none}
+.steps li{display:flex;gap:12px;align-items:flex-start}
+.steps .n{
+  flex:0 0 auto;width:26px;height:26px;border-radius:9px;display:grid;place-items:center;
+  font-size:12.5px;font-weight:800;color:#8A5D00;
+  background:linear-gradient(180deg,#FFE9A8,#FFD25C);
+  box-shadow:0 1px 0 rgba(255,255,255,.95) inset, 0 6px 12px -8px rgba(200,130,0,.9);
+}
+.steps .txt{font-size:12.5px;line-height:1.55;color:var(--ink-2);padding-top:3px}
+.steps .txt b{color:var(--ink);font-weight:800;margin-right:6px}
+.guide .note{
+  margin:14px 0 0;padding-top:12px;border-top:1px solid rgba(255,255,255,.75);
+  font-size:11.5px;line-height:1.75;color:var(--ink-3);
+}
+.foot{text-align:center;font-size:11.5px;color:#A6977F;line-height:1.9;margin-top:8px;padding:0 10px}
+.foot a{color:#B4801A;text-decoration:none;font-weight:700}
+
+.glowring{position:absolute;inset:-50% -12% auto -12%;height:64%;pointer-events:none;z-index:0;
+  background:radial-gradient(58% 100% at 50% 0%, color-mix(in srgb, var(--glow) 40%, transparent), transparent 72%);
+  filter:blur(26px);opacity:.5;transition:opacity .4s}
+[hidden]{display:none !important}
+.done{animation:pop .36s cubic-bezier(.34,1.3,.64,1)}
+@keyframes pop{0%{transform:scale(.985);opacity:.65}100%{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion: reduce){.blob{animation:none !important}}
+</style>
+</head>
+<body>
+<div class="scene"><i class="blob b1"></i><i class="blob b2"></i><i class="blob b3"></i></div>
+<div class="grain"></div>
+
+<div class="wrap">
+  <header class="hero">
+    <img class="brand-logo" src="assets/logo.png" alt="迷人秀">
+    <div class="brand-text">
+      <h1>直播间贴片生成器</h1>
+      <p class="sub">选模板 · 填内容 · 生成 <em>1920×3414</em> 透明 PNG<br>长按图片即可存到手机</p>
+    </div>
+  </header>
+
+  <section class="card panel">
+    <div class="chips-wrap">
+    <div class="chips" role="tablist" aria-label="贴片模板">
+      <button class="chip" role="tab" data-tpl="phone" aria-selected="true">微信号</button>
+      <button class="chip" role="tab" data-tpl="noexercise" aria-selected="false">不运动不挨饿</button>
+      <button class="chip" role="tab" data-tpl="bubble" aria-selected="false">减脂塑形</button>
+      <button class="chip" role="tab" data-tpl="height" aria-selected="false">身高体重年龄</button>
+      <button class="chip" role="tab" data-tpl="month" aria-selected="false">月减8-15斤</button>
+    </div>
+    </div>
+
+    <div class="editor">
+      <div class="field">
+        <span class="pfx" id="pfxLabel">微</span>
+        <input id="val" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false"
+               maxlength="24" placeholder="输入手机号 / 微信号">
+        <button class="mini" id="clr" type="button">清空</button>
+      </div>
+
+      <div class="row">
+        <span class="lab">文字色</span>
+        <div class="colors" id="colors"></div>
+      </div>
+
+      <div class="row" id="bgRow">
+        <span class="lab">底色</span>
+        <div class="colors" id="bgcolors"></div>
+      </div>
+
+      <div class="row" id="prefixRow">
+        <span class="lab">前缀</span>
+        <div class="seg" id="prefixSeg">
+          <button type="button" data-p="微" class="on">微</button>
+          <button type="button" data-p="V">V</button>
+          <button type="button" data-p="微信">微信</button>
+          <button type="button" data-p="">不加</button>
+        </div>
+      </div>
+
+      <div class="gen-wrap"><button class="btn primary" id="gen" type="button">生成贴片</button></div>
+    </div>
+  </section>
+
+  <section class="card preview-card" id="previewCard" hidden>
+    <div class="glowring" id="glowring"></div>
+    <div class="preview-head">
+      <span class="dot"></span><span id="stateText">示例效果</span>
+      <span class="meta" id="meta">1920 × 3414 · 透明 PNG</span>
+    </div>
+    <div class="stage zoom" id="stage">
+      <img id="out" alt="贴片预览">
+      <span class="zoomhint" id="zoomHint">点击查看整图</span>
+    </div>
+    <p class="tip" id="tipMain">手机端 <b>长按上方图片</b> 可直接保存到相册</p>
+    <div class="actions">
+      <button class="btn primary" id="save" type="button">保存到手机</button>
+      <button class="btn glass" id="reroll" type="button">换个笔刷</button>
+    </div>
+    <label class="switch"><input type="checkbox" id="crop"><span>紧凑裁切，去掉多余透明区域</span></label>
+  </section>
+
+  <section class="card guide">
+    <h3>三步搞定</h3>
+    <ol class="steps">
+      <li><span class="n">1</span><span class="txt"><b>选模板</b>5 种直播间常用样式，底纹与字体贴近原始贴片</span></li>
+      <li><span class="n">2</span><span class="txt"><b>填内容</b>输入手机号 / 微信号，或直接改文字，字号自动适配；下方可换文字颜色与底色</span></li>
+      <li><span class="n">3</span><span class="txt"><b>存图片</b>长按图片保存到相册，拖进直播伴侣 / OBS 即可</span></li>
+    </ol>
+    <p class="note">生成文件为 1920×3414 透明 PNG，与原始贴片分辨率一致；导入后默认铺满画面，贴片位于画面正中，按需缩放即可。</p>
+  </section>
+
+  <p class="foot">透明通道完整，不遮挡直播画面</p>
+</div>
+
+<script>
+/* ==========================================================
+   直播间贴片生成器
+   ========================================================== */
+const W = 1920, H = 3414, CX = 960, CY = 1707;
+const FONT = 'StickerBlack';
+
+/* 各模板版式参数（数值来自对原始贴片的测量） */
+const TPL = {
+  phone: {
+    mode:'band', color:'#FFD042', bandH:284, bandMax:1900, pad:82, minBand:820, bandCY:36,
+    cap:151, fitDigit:true, sx:0.977, track:0.072,
+    textColor:'#FFFFFF', outline:3.6, bold:0.012, skew:11, shadow:[15,19,24,.90],
+    textCY:-49, sample:'18509462480', glow:'#FFD042'
+  },
+  height: {
+    mode:'band', color:'#D18CFF', bandH:349, bandMax:1900, pad:84, minBand:820, bandCY:0,
+    cap:186, sx:1.0, track:0,
+    textColor:'#FFFFFF', outline:3.6, bold:0.012, skew:11, shadow:[15,19,24,.90],
+    textCY:-41, sample:'身高体重年龄打出来', glow:'#D18CFF'
+  },
+  month: {
+    mode:'band', color:'#FFF589', bandH:577, fullBleed:true, pad:70, bandCY:0,
+    cap:310, sx:1.0, track:0,
+    textColor:'#FFFFFF', outline:4.8, bold:0.012, skew:11, shadow:[15,19,32,.72],
+    textCY:-3, sample:'月减8-15斤', glow:'#FFF08A'
+  },
+  noexercise: {
+    mode:'text', cap:297, sx:0.90, track:-0.045,
+    textColor:'#FFDE00', outline:4.4, bold:0.012, skew:11, shadow:[15,19,24,.90],
+    textCY:6, sample:'不运动，不挨饿', glow:'#FFDE00'
+  },
+  bubble: {
+    mode:'bubble', cap:280, sx:0.955, track:0.01,
+    textColor:'#FFFFFF', outline:4.6, bold:0.010, skew:11, shadow:[12,16,22,.62],
+    textCY:-151, sample:'减脂塑形', glow:'#EFEFEF'
+  }
+};
+
+/* ---------- 工具 ---------- */
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+const clamp = (v,a,b)=>Math.min(b,Math.max(a,v));
+
+const measureCv = document.createElement('canvas');
+const mctx = measureCv.getContext('2d');
+function ink(text, fs){
+  mctx.font = `900 ${fs}px "${FONT}"`;
+  mctx.textAlign = 'center';
+  const m = mctx.measureText(text);
+  return {
+    w: m.actualBoundingBoxLeft + m.actualBoundingBoxRight,
+    asc: m.actualBoundingBoxAscent,
+    desc: m.actualBoundingBoxDescent,
+    adv: m.width
+  };
+}
+/* 带字距的排版宽度 */
+function layoutWidth(text, fs, track){
+  mctx.font = `900 ${fs}px "${FONT}"`;
+  let w = 0;
+  for (const ch of text) w += mctx.measureText(ch).width + track;
+  return w - (text.length ? track : 0);
+}
+
+/* ---------- 笔刷底纹 ---------- */
+/* 直边为主 + 两端撕裂 + 局部缺口，贴近原图的手刷质感 */
+function brushPoints(w, h, rnd){
+  const pts = [];
+  const j = (a) => (rnd() - 0.5) * a;
+
+  // 上边缘（左→右）：大部分平直，偶有缺口
+  const topStops = [0, 0.05, 0.13, 0.21, 0.30, 0.38, 0.47, 0.55, 0.64, 0.72, 0.81, 0.89, 0.96, 1];
+  const notch = Math.floor(rnd() * (topStops.length - 3)) + 1;
+  topStops.forEach((t, i) => {
+    let y = h * 0.02 + j(h * 0.035);
+    if (i === notch) y += h * (0.09 + rnd() * 0.07);
+    if (i === notch + 1) y += h * (0.03 + rnd() * 0.04);
+    if (i === notch + 2) y += h * 0.02;
+    pts.push([t * w, y]);
+  });
+  // 右端：向右探出的尖角（上、中、下三段）
+  pts.push([w + w * (0.004 + rnd() * 0.012), h * (0.10 + rnd() * 0.10)]);
+  pts.push([w - w * (0.004 + rnd() * 0.016), h * (0.30 + rnd() * 0.10)]);
+  pts.push([w + w * (0.006 + rnd() * 0.014), h * (0.52 + rnd() * 0.10)]);
+  pts.push([w - w * 0.004, h * (0.74 + rnd() * 0.10)]);
+  // 下边缘（右→左）
+  const botStops = [0.98, 0.92, 0.84, 0.76, 0.67, 0.58, 0.49, 0.40, 0.31, 0.22, 0.13, 0.05, 0];
+  const notch2 = Math.floor(rnd() * (botStops.length - 3)) + 1;
+  botStops.forEach((t, i) => {
+    let y = h * 0.975 + j(h * 0.035);
+    if (i === notch2) y -= h * (0.08 + rnd() * 0.06);
+    if (i === notch2 + 1) y -= h * (0.03 + rnd() * 0.04);
+    pts.push([t * w, y]);
+  });
+  // 左端：向左探出的尖角
+  pts.push([-w * (0.004 + rnd() * 0.012), h * (0.80 + rnd() * 0.10)]);
+  pts.push([w * (0.006 + rnd() * 0.010), h * (0.60 + rnd() * 0.10)]);
+  pts.push([-w * (0.006 + rnd() * 0.014), h * (0.40 + rnd() * 0.10)]);
+  pts.push([w * (0.004 + rnd() * 0.008), h * (0.18 + rnd() * 0.08)]);
+
+  // 归一化：让笔刷正好铺满 [0,w] x [0,h]
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const [px, py] of pts){
+    if (px < minX) minX = px; if (px > maxX) maxX = px;
+    if (py < minY) minY = py; if (py > maxY) maxY = py;
+  }
+  const kx = w / (maxX - minX || 1), ky = h / (maxY - minY || 1);
+  return pts.map(([px, py]) => [(px - minX) * kx, (py - minY) * ky]);
+}
+
+function drawBand(ctx, x, y, w, h, color, seed){
+  const rnd = mulberry32(seed);
+  const pts = brushPoints(w, h, rnd);
+  const path = new Path2D();
+  path.moveTo(x + pts[0][0], y + pts[0][1]);
+  for (let i = 1; i < pts.length; i++) path.lineTo(x + pts[i][0], y + pts[i][1]);
+  path.closePath();
+
+  // 边缘羽化（模拟手刷的毛边）
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  ctx.filter = `blur(${Math.max(4, h * 0.03)}px)`;
+  ctx.fillStyle = color;
+  ctx.fill(path);
+  ctx.restore();
+
+  // 实心主体
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.strokeStyle = color;
+  ctx.lineJoin = 'round';
+  ctx.miterLimit = 2;
+  ctx.lineWidth = Math.max(6, h * 0.024);
+  ctx.fill(path);
+  ctx.stroke(path);
+  ctx.restore();
+}
+
+/* ---------- 文字（白字 + 黑边 + 投影 + 倾斜 + 横压 + 字距） ---------- */
+function drawStickerText(ctx, text, fs, cx, baseline, t){
+  const m = ink(text, fs);
+  const k = Math.tan(t.skew * Math.PI / 180);
+  const sx = t.sx || 1;
+  const sc = fs / 230;
+  const track = (t.track || 0) * fs;
+  const chars = Array.from(text);
+
+  ctx.save();
+  ctx.font = `900 ${fs}px "${FONT}"`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+
+  // 逐字排版
+  const pos = [];
+  let pen = 0;
+  for (const ch of chars){
+    pos.push(pen);
+    pen += ctx.measureText(ch).width + track;
+  }
+  const total = pen - (chars.length ? track : 0);
+
+  ctx.translate(cx, baseline);
+  ctx.transform(sx, 0, -k, 1, 0, 0);
+  const x0 = -total / 2;
+
+  // 1) 投影
+  ctx.save();
+  ctx.shadowColor = `rgba(0,0,0,${t.shadow[3]})`;
+  ctx.shadowBlur = t.shadow[2] * sc;
+  ctx.shadowOffsetX = t.shadow[0] * sc;
+  ctx.shadowOffsetY = t.shadow[1] * sc;
+  ctx.fillStyle = '#000';
+  for (let i = 0; i < chars.length; i++) ctx.fillText(chars[i], x0 + pos[i], 0);
+  ctx.restore();
+
+  // 2) 描边（先把字重“撑胖”一点，再压黑边）
+  ctx.lineJoin = 'round';
+  ctx.miterLimit = 1.6;
+  const d = (t.bold || 0) * fs;       // 单边加粗量
+  const o = t.outline * sc;           // 单边黑边宽度
+
+  ctx.lineWidth = (o + d) * 2;
+  ctx.strokeStyle = '#000';
+  for (let i = 0; i < chars.length; i++) ctx.strokeText(chars[i], x0 + pos[i], 0);
+
+  if (d > 0){
+    ctx.lineWidth = d * 2;
+    ctx.strokeStyle = t.textColor;
+    for (let i = 0; i < chars.length; i++) ctx.strokeText(chars[i], x0 + pos[i], 0);
+  }
+
+  // 3) 填充
+  ctx.fillStyle = t.textColor;
+  for (let i = 0; i < chars.length; i++) ctx.fillText(chars[i], x0 + pos[i], 0);
+
+  ctx.restore();
+  return total * sx;
+}
+
+/* ---------- 像素对话框 ---------- */
+/* 路径 = 白色区域边界，描边向外扩 bd；尾巴为左下像素阶梯 */
+function bubbleSilhouette(x0, y0, x1, y1, s){
+  const p = new Path2D();
+  p.moveTo(x0 + s, y0);
+  p.lineTo(x1 - s, y0);
+  p.lineTo(x1 - s, y0 + s);
+  p.lineTo(x1, y0 + s);
+  p.lineTo(x1, y1 - s);
+  p.lineTo(x1 - s, y1 - s);
+  p.lineTo(x1 - s, y1);
+  p.lineTo(x0 + s, y1);
+  p.lineTo(x0 + s, y1 - s);
+  p.lineTo(x0, y1 - s);
+  p.lineTo(x0, y0 + s);
+  p.lineTo(x0 + s, y0 + s);
+  p.closePath();
+  return p;
+}
+
+/* 尾巴路径（接在气泡底边上） */
+function tailSilhouette(y1){
+  const T = [
+    [674, 1830], [674, 1990], [629, 1990], [629, 2130],
+    [679, 2130], [679, 2030], [705, 2030], [705, 2010],
+    [748, 2010], [748, 1990], [793, 1990], [793, 1830]
+  ];
+  const p = new Path2D();
+  p.moveTo(T[0][0], T[0][1]);
+  for (let i = 1; i < T.length; i++) p.lineTo(T[i][0], T[i][1]);
+  p.closePath();
+  return p;
+}
+
+function drawBubble(ctx, fill){
+  const s = 34, bd = 37;
+  const y0 = 1281, y1 = 1830;      // 白域上下边界
+  const x0 = -70, x1 = W + 70;
+
+  const body = bubbleSilhouette(x0, y0, x1, y1, s);
+  const tail = tailSilhouette(y1);
+
+  ctx.save();
+  ctx.lineJoin = 'miter';
+  ctx.miterLimit = 3;
+  ctx.lineWidth = bd * 2;
+
+  // 灰色偏移投影
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,.34)';
+  ctx.shadowBlur = 9;
+  ctx.shadowOffsetX = 34;
+  ctx.shadowOffsetY = 40;
+  ctx.fillStyle = '#000';
+  ctx.strokeStyle = '#000';
+  ctx.fill(body); ctx.stroke(body);
+  ctx.fill(tail); ctx.stroke(tail);
+  ctx.restore();
+
+  // 黑边 + 内里
+  ctx.strokeStyle = '#000';
+  ctx.stroke(body); ctx.stroke(tail);
+  ctx.fillStyle = fill || '#FFFFFF';
+  ctx.fill(body); ctx.fill(tail);
+  ctx.restore();
+}
+
+/* ---------- 主渲染 ---------- */
+function buildSticker(key, rawValue, opt){
+  const opt2 = opt || {};
+  const t = Object.assign({}, TPL[key]);
+  if (opt2.color) t.textColor = opt2.color;
+  if (opt2.bg){
+    if (t.mode === 'band') t.color = opt2.bg;
+    else if (t.mode === 'bubble') t.fill = opt2.bg;
+  }
+  let text = String(rawValue == null ? '' : rawValue).trim();
+  if (key === 'phone' && opt2.prefix){
+    text = text ? opt2.prefix + ' ' + text : opt2.prefix;
+  }
+  if (!text) text = t.sample;
+
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+
+  const core = text.replace(/[，。、,.!！?？:：~～]/g, '') || text;
+  const fitTxt = t.fitDigit ? (core.replace(/[^\dA-Za-z]/g, '') || '8') : core;
+
+  // 1) 由目标字高定字号
+  const m0 = ink(fitTxt, 230);
+  let fs = 230 * (t.cap / Math.max(m0.asc + m0.desc, 1));
+  const nCh = Array.from(text).length;
+  const tw = () => (ink(text, fs).w + (t.track || 0) * fs * Math.max(0, nCh - 1)) * t.sx;
+
+  // 2) 超宽则缩字号
+  const avail = t.fullBleed ? W - 250
+    : (t.mode === 'bubble' ? W - 360
+    : (t.mode === 'text' ? W - 210
+    : Math.min(t.bandMax || 1880, W - 40) - (t.pad || 0) * 2 - 26));
+  if (tw() > avail){
+    fs *= avail / tw();
+  }
+
+  const sc = fs / 230;
+  const textW = tw();
+  let bd;
+
+  if (t.mode === 'bubble'){
+    drawBubble(ctx, t.fill || '#FFFFFF');
+    const m = ink(text, fs);
+    const baseline = CY + t.textCY + (m.asc - m.desc) / 2;
+    drawStickerText(ctx, text, fs, CX, baseline, t);
+    bd = { x0: 0, y0: CY - 463 - 24, x1: W, y1: CY - 463 + 556 + 360 };
+  } else if (t.mode === 'text'){
+    const m = ink(text, fs);
+    const baseline = CY + t.textCY + (m.asc - m.desc) / 2;
+    drawStickerText(ctx, text, fs, CX, baseline, t);
+    const pad = t.outline * 2 * sc + 30;
+    bd = {
+      x0: CX - textW / 2 - pad, y0: baseline - m.asc - pad,
+      x1: CX + textW / 2 + pad, y1: baseline + m.desc + pad + 26
+    };
+  } else {
+    const bandW = t.fullBleed ? W + 140 : clamp(textW + t.pad * 2, t.minBand, t.bandMax);
+    const bandX = t.fullBleed ? -70 : CX - bandW / 2;
+    const bandY = CY + (t.bandCY || 0) - t.bandH / 2;
+
+    if (t.fullBleed){
+      ctx.fillStyle = t.color;
+      ctx.fillRect(-70, bandY, W + 140, t.bandH);
+    } else {
+      drawBand(ctx, bandX, bandY, bandW, t.bandH, t.color, opt2.seed || 11);
+    }
+
+    const m = ink(text, fs);
+    const baseline = CY + t.textCY + (m.asc - m.desc) / 2;
+    drawStickerText(ctx, text, fs, CX, baseline, t);
+
+    bd = {
+      x0: bandX - 40,
+      y0: Math.min(bandY, baseline - m.asc) - t.outline * 2 * sc - 14,
+      x1: bandX + bandW + 40,
+      y1: Math.max(bandY + t.bandH, baseline + 16) + t.shadow[1] * sc + t.shadow[2] * sc
+    };
+  }
+
+  let outCv = cv;
+  if (opt2.crop){
+    const x0 = clamp(Math.floor(bd.x0), 0, W), y0 = clamp(Math.floor(bd.y0), 0, H);
+    const x1 = clamp(Math.ceil(bd.x1), 0, W), y1 = clamp(Math.ceil(bd.y1), 0, H);
+    const w = Math.max(1, x1 - x0), h = Math.max(1, y1 - y0);
+    outCv = document.createElement('canvas');
+    outCv.width = w; outCv.height = h;
+    outCv.getContext('2d').drawImage(cv, -x0, -y0);
+  }
+  return outCv;
+}
+
+/* ==========================================================
+   界面逻辑
+   ========================================================== */
+const $ = s => document.querySelector(s);
+const ui = {
+  val: $('#val'), pfx: $('#pfxLabel'), prefixRow: $('#prefixRow'), prefixSeg: $('#prefixSeg'),
+  gen: $('#gen'), clr: $('#clr'), chips: [...document.querySelectorAll('.chip')],
+  card: $('#previewCard'), out: $('#out'), meta: $('#meta'),
+  save: $('#save'), reroll: $('#reroll'), crop: $('#crop'), glow: $('#glowring'),
+  stateText: $('#stateText'), tipMain: $('#tipMain'), stage: $('#stage'), zoomHint: $('#zoomHint'),
+  colors: $('#colors'), bgcolors: $('#bgcolors'), bgRow: $('#bgRow')
+};
+
+const COLOR_OPTS = [
+  { c:'#FFFFFF', n:'白' },
+  { c:'#FFDE00', n:'明黄' },
+  { c:'#FFB020', n:'橙' },
+  { c:'#FF6B6B', n:'珊瑚红' },
+  { c:'#FF9ED2', n:'樱粉' },
+  { c:'#6FD3FF', n:'天蓝' },
+  { c:'#4FE0B4', n:'薄荷绿' },
+  { c:'#C08BFF', n:'紫' }
+];
+
+const BG_OPTS = [
+  { c:'#FFD042', n:'金黄' },
+  { c:'#FFF589', n:'淡黄' },
+  { c:'#D18CFF', n:'紫' },
+  { c:'#FFFFFF', n:'白' },
+  { c:'#7FC4EA', n:'天蓝' },
+  { c:'#FFA8CF', n:'粉' },
+  { c:'#8FE3BC', n:'薄荷' },
+  { c:'#FFA53D', n:'橙' }
+];
+
+const state = {
+  tpl: 'phone',
+  bg: { phone:'#FFD042', height:'#D18CFF', month:'#FFF589', bubble:'#FFFFFF', noexercise:null },
+  colors: { phone:'#FFFFFF', height:'#FFFFFF', month:'#FFFFFF', noexercise:'#FFDE00', bubble:'#FFFFFF' },
+  prefix: '微',
+  seed: 11,
+  crop: false,
+  values: { phone:'', noexercise:'不运动，不挨饿', bubble:'减脂塑形', height:'身高体重年龄打出来', month:'月减8-15斤' },
+  lastCv: null,
+  isDemo: true
+};
+
+/* 恢复上次输入 */
+try{
+  const saved = JSON.parse(localStorage.getItem('sticker.v1') || '{}');
+  if (saved.values) Object.assign(state.values, saved.values);
+  if (saved.prefix !== undefined) state.prefix = saved.prefix;
+  if (saved.colors) Object.assign(state.colors, saved.colors);
+  if (saved.bg) Object.assign(state.bg, saved.bg);
+}catch(e){}
+
+function persist(){
+  try{
+    localStorage.setItem('sticker.v1', JSON.stringify({
+      values: state.values, prefix: state.prefix, colors: state.colors, bg: state.bg
+    }));
+  }catch(e){}
+}
+
+function buildColors(){
+  ui.colors.innerHTML = COLOR_OPTS.map(o =>
+    `<button class="sw" type="button" data-c="${o.c}" title="${o.n}" aria-label="${o.n}"
+      style="background:${o.c}" aria-pressed="false"></button>`
+  ).join('');
+}
+
+function buildBgColors(){
+  ui.bgcolors.innerHTML = BG_OPTS.map(o =>
+    `<button class="sw" type="button" data-c="${o.c}" title="${o.n}" aria-label="${o.n}"
+      style="background:${o.c}" aria-pressed="false"></button>`
+  ).join('');
+}
+
+function paintUI(){
+  ui.chips.forEach(c => c.setAttribute('aria-selected', String(c.dataset.tpl === state.tpl)));
+  const isPhone = state.tpl === 'phone';
+  ui.prefixRow.hidden = !isPhone;
+  ui.pfx.hidden = !isPhone || !state.prefix;
+  ui.pfx.textContent = state.prefix || '';
+  ui.val.value = state.values[state.tpl] || '';
+  ui.val.placeholder = isPhone ? '输入手机号 / 微信号' : '输入要显示的文字';
+  [...ui.prefixSeg.children].forEach(b => b.classList.toggle('on', b.dataset.p === state.prefix));
+  const cur = state.colors[state.tpl] || TPL[state.tpl].textColor;
+  [...ui.colors.children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.c.toUpperCase() === cur.toUpperCase())));
+
+  const hasBg = state.tpl !== 'noexercise';
+  ui.bgRow.hidden = !hasBg;
+  const curBg = (state.bg[state.tpl] || '').toUpperCase();
+  [...ui.bgcolors.children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.c.toUpperCase() === curBg)));
+  ui.glow.style.setProperty('--glow', TPL[state.tpl].glow);
+  document.documentElement.style.setProperty('--glow', TPL[state.tpl].glow);
+}
+
+function setBusy(b){
+  ui.gen.disabled = b;
+  ui.gen.textContent = b ? '生成中…' : '生成贴片';
+}
+
+let timer = null;
+function scheduleRender(delay){
+  clearTimeout(timer);
+  timer = setTimeout(() => {
+    quietGen = true;
+    generate();
+    quietGen = false;
+  }, delay == null ? 260 : delay);
+}
+
+function shake(){
+  ui.val.animate(
+    [{transform:'translateX(0)'},{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'translateX(-3px)'},{transform:'translateX(0)'}],
+    {duration:320, easing:'ease-in-out'}
+  );
+}
+
+const DEMO_NUM = '13800000000';
+
+let quietGen = false;
+
+function generate(demo){
+  demo = !!demo;
+  const quiet = quietGen;
+  const tpl = state.tpl;
+  const raw = demo ? (tpl === 'phone' ? DEMO_NUM : TPL[tpl].sample) : state.values[tpl];
+  if (!demo && tpl === 'phone' && !String(raw || '').trim()){
+    ui.val.focus();
+    shake();
+    return;
+  }
+  if (!quiet) setBusy(true);
+  setTimeout(() => {
+    try{
+      const cv = buildSticker(tpl, raw, {
+        prefix: state.prefix, seed: state.seed, crop: state.crop,
+        color: state.colors[tpl],
+        bg: state.bg[tpl]
+      });
+      state.lastCv = cv;
+      state.isDemo = demo;
+      ui.out.src = cv.toDataURL('image/png');
+      ui.meta.textContent = `${cv.width} × ${cv.height} · 透明 PNG`;
+      ui.stateText.textContent = demo ? '示例效果' : '已生成';
+      ui.tipMain.innerHTML = demo
+        ? '这是<b>示例效果</b>，填入你的号码即可生成自己的贴片'
+        : '手机端<b>长按上方图片</b>可直接保存到相册';
+      ui.card.hidden = false;
+      ui.stage.classList.add('zoom');
+      ui.stage.classList.remove('fit');
+      ui.zoomHint.textContent = '点击查看整图';
+      ui.card.classList.remove('done');
+      void ui.card.offsetWidth;
+      ui.card.classList.add('done');
+      if (!demo && !quiet) setTimeout(() => ui.card.scrollIntoView({behavior:'smooth', block:'nearest'}), 60);
+    }catch(err){
+      console.error(err);
+    }
+    setBusy(false);
+  }, 30);
+}
+
+/* 保存 */
+async function saveImage(){
+  if (!state.lastCv) return;
+  const cv = state.lastCv;
+  const name = `贴片_${state.tpl}_${cv.width}x${cv.height}.png`;
+  const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
+  if (!blob) return;
+  const file = new File([blob], name, {type:'image/png'});
+  if (navigator.canShare && navigator.canShare({files:[file]})){
+    try{
+      await navigator.share({files:[file], title:'直播间贴片'});
+      return;
+    }catch(e){
+      if (e && e.name === 'AbortError') return;
+    }
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+/* 事件 */
+ui.chips.forEach(c => c.addEventListener('click', () => {
+  state.tpl = c.dataset.tpl;
+  paintUI();
+  const v = state.values[state.tpl];
+  generate(v && v.trim() ? false : true);
+}));
+
+ui.val.addEventListener('input', () => {
+  state.values[state.tpl] = ui.val.value;
+  persist();
+  if (state.tpl === 'phone'){
+    ui.pfx.hidden = !state.prefix;
+    ui.pfx.textContent = state.prefix || '';
+  }
+  if (ui.val.value.trim()) scheduleRender(420);
+  else if (state.tpl === 'phone'){ state.isDemo = false; }
+});
+
+ui.colors.addEventListener('click', e => {
+  const b = e.target.closest('.sw'); if (!b) return;
+  state.colors[state.tpl] = b.dataset.c;
+  persist();
+  paintUI();
+  const v = state.values[state.tpl];
+  generate(v && v.trim() ? false : true);
+});
+
+ui.bgcolors.addEventListener('click', e => {
+  const b = e.target.closest('.sw'); if (!b) return;
+  state.bg[state.tpl] = b.dataset.c;
+  persist();
+  paintUI();
+  const v = state.values[state.tpl];
+  generate(v && v.trim() ? false : true);
+});
+
+ui.prefixSeg.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  state.prefix = b.dataset.p;
+  paintUI(); persist();
+  generate(String(state.values.phone || '').trim() ? false : true);
+});
+
+ui.gen.addEventListener('click', () => generate(false));
+ui.clr.addEventListener('click', () => {
+  state.values[state.tpl] = '';
+  ui.val.value = '';
+  persist();
+  ui.val.focus();
+});
+ui.reroll.addEventListener('click', () => {
+  state.seed = Math.floor(Math.random() * 99999) + 1;
+  generate(state.isDemo);
+});
+ui.crop.addEventListener('change', () => { state.crop = ui.crop.checked; generate(state.isDemo); });
+ui.save.addEventListener('click', saveImage);
+ui.stage.addEventListener('click', () => {
+  const fit = ui.stage.classList.toggle('fit');
+  ui.stage.classList.toggle('zoom', !fit);
+  ui.zoomHint.textContent = fit ? '点击放大查看' : '点击查看整图';
+});
+
+ui.val.addEventListener('keydown', e => {
+  if (e.key === 'Enter'){ e.preventDefault(); ui.val.blur(); generate(); }
+});
+
+/* 字体加载 */
+(async function init(){
+  buildColors();
+  buildBgColors();
+  paintUI();
+  try{
+    await document.fonts.load(`900 120px "${FONT}"`);
+    await document.fonts.ready;
+  }catch(e){}
+  document.documentElement.style.setProperty('--glow', TPL[state.tpl].glow);
+  setTimeout(() => generate(true), 60);
+})();
+
+window.StickerApp = { buildSticker, TPL, state };
+
+/* 调试：?metrics=1 输出字体度量 */
+(function metrics(){
+  const q = new URLSearchParams(location.search);
+  if (!q.has('metrics')) return;
+  document.fonts.load(`900 120px "${FONT}"`).then(() => {
+    const out = {};
+    ['身高体重年龄打出来','月减8-15斤','减脂塑形','18509462480','8','国','不运动，不挨饿','不运动不挨饿','不','运','单'].forEach(t => {
+      out[t] = ink(t, 230);
+    });
+    document.body.textContent = 'METRICS=' + JSON.stringify(out);
+  });
+})();
+
+/* 调试：?probe=phone:18509462480&seed=11&crop=1 直接输出画布 */
+(function probe(){
+  const q = new URLSearchParams(location.search);
+  if (!q.has('probe')) return;
+  const [key, ...rest] = q.get('probe').split(':');
+  const value = rest.join(':');
+  const cv = buildSticker(key || 'phone', value, {
+    prefix: q.get('prefix') || '微',
+    seed: Number(q.get('seed') || 11),
+    crop: q.get('crop') === '1',
+    color: q.get('color') || undefined,
+    bg: q.get('bg') || undefined
+  });
+  const done = () => {
+    document.body.innerHTML = '';
+    document.body.style.cssText = 'margin:0;background:transparent;overflow:hidden';
+    cv.style.cssText = 'display:block';
+    document.body.appendChild(cv);
+  };
+  if (document.fonts) document.fonts.load(`900 120px "${FONT}"`).then(() => document.fonts.ready).then(done);
+  else done();
+})();
+</script>
+</body>
+</html>
