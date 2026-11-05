@@ -3,3 +3,5 @@ _*.png
 _*.html
 _*.py
 *.pyc
+
+assets/_draft/
