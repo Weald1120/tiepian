@@ -302,7 +302,6 @@ h1{font-size:22px;line-height:1.3;margin:0 0 7px;letter-spacing:.2px;font-weight
       <button class="chip" role="tab" data-tpl="noexercise" aria-selected="false">不运动不挨饿</button>
       <button class="chip" role="tab" data-tpl="bubble" aria-selected="false">减脂塑形</button>
       <button class="chip" role="tab" data-tpl="height" aria-selected="false">身高体重年龄</button>
-      <button class="chip" role="tab" data-tpl="month" aria-selected="false">月减8-15斤</button>
     </div>
     </div>
 
@@ -359,14 +358,14 @@ h1{font-size:22px;line-height:1.3;margin:0 0 7px;letter-spacing:.2px;font-weight
   <section class="card guide">
     <h3>三步搞定</h3>
     <ol class="steps">
-      <li><span class="n">1</span><span class="txt"><b>选模板</b>5 种直播间常用样式，底纹与字体贴近原始贴片</span></li>
+      <li><span class="n">1</span><span class="txt"><b>选模板</b>4 种直播间常用样式，底纹与字体贴近原始贴片</span></li>
       <li><span class="n">2</span><span class="txt"><b>填内容</b>输入手机号 / 微信号，或直接改文字，字号自动适配；下方可换文字颜色与底色</span></li>
       <li><span class="n">3</span><span class="txt"><b>存图片</b>长按图片保存到相册，拖进直播伴侣 / OBS 即可</span></li>
     </ol>
     <p class="note">生成文件为 1920×3414 透明 PNG，与原始贴片分辨率一致；导入后默认铺满画面，贴片位于画面正中，按需缩放即可。</p>
   </section>
 
-  <p class="foot">透明通道完整，不遮挡直播画面<span class="ver" id="ver">v2</span></p>
+  <p class="foot">透明通道完整，不遮挡直播画面<span class="ver" id="ver">v3</span></p>
 </div>
 
 <script>
@@ -389,12 +388,6 @@ const TPL = {
     cap:186, sx:1.0, track:0,
     textColor:'#FFFFFF', outline:3.6, bold:0.012, skew:11, shadow:[15,19,24,.90],
     textCY:-41, sample:'身高体重年龄打出来', glow:'#D18CFF'
-  },
-  month: {
-    mode:'band', color:'#FFF589', bandH:577, fullBleed:true, pad:70, bandCY:0,
-    cap:310, sx:1.0, track:0,
-    textColor:'#FFFFFF', outline:4.8, bold:0.012, skew:11, shadow:[15,19,32,.72],
-    textCY:-3, sample:'月减8-15斤', glow:'#FFF08A'
   },
   noexercise: {
     mode:'text', cap:297, sx:0.90, track:-0.045,
@@ -779,12 +772,12 @@ const BG_OPTS = [
 
 const state = {
   tpl: 'phone',
-  bg: { phone:'#FFD042', height:'#D18CFF', month:'#FFF589', bubble:'#FFFFFF', noexercise:null },
-  colors: { phone:'#FFFFFF', height:'#FFFFFF', month:'#FFFFFF', noexercise:'#FFDE00', bubble:'#FFFFFF' },
+  bg: { phone:'#FFD042', height:'#D18CFF', bubble:'#FFFFFF', noexercise:null },
+  colors: { phone:'#FFFFFF', height:'#FFFFFF', noexercise:'#FFDE00', bubble:'#FFFFFF' },
   prefix: '微',
   seed: 11,
   crop: false,
-  values: { phone:'', noexercise:'不运动，不挨饿', bubble:'减脂塑形', height:'身高体重年龄打出来', month:'月减8-15斤' },
+  values: { phone:'', noexercise:'不运动，不挨饿', bubble:'减脂塑形', height:'身高体重年龄打出来' },
   lastCv: null,
   isDemo: true
 };
@@ -1034,7 +1027,7 @@ window.StickerApp = { buildSticker, TPL, state };
   if (!q.has('metrics')) return;
   document.fonts.load(`900 120px "${FONT}"`).then(() => {
     const out = {};
-    ['身高体重年龄打出来','月减8-15斤','减脂塑形','18509462480','8','国','不运动，不挨饿','不运动不挨饿','不','运','单'].forEach(t => {
+    ['身高体重年龄打出来','减脂塑形','18509462480','8','国','不运动，不挨饿','不运动不挨饿','不','运','单'].forEach(t => {
       out[t] = ink(t, 230);
     });
     document.body.textContent = 'METRICS=' + JSON.stringify(out);
